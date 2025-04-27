@@ -1,0 +1,33 @@
+// Minimal ASP.NET Core setup for the SignalR server
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
+
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Add SignalR services
+builder.Services.AddSignalR().AddJsonProtocol(options =>
+{
+    options.PayloadSerializerOptions.PropertyNamingPolicy = null;
+});
+
+// Add CORS to allow the WPF client to connect (update with your client's URL in production)
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", builder =>
+    {
+        builder.AllowAnyOrigin()
+               .AllowAnyMethod()
+               .AllowAnyHeader();
+    });
+});
+
+var app = builder.Build();
+
+// Enable CORS
+app.UseCors("AllowAll");
+
+// Map the SignalR Hub
+app.MapHub<LobbyHub>("/lobbyHub");
+
+app.Run("http://0.0.0.0:50001");
