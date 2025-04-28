@@ -54,4 +54,9 @@ public class LobbyHub : Hub
         var playerList = _players.Values.Select(p => new { p.UserName, p.Status }).ToList();
         await Clients.All.SendAsync("UpdatePlayerList", playerList);
     }
+
+    public Task Ping()
+    {
+        return Task.CompletedTask; // Responds to client ping
+    }
 }
