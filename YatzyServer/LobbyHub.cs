@@ -51,7 +51,7 @@ public class LobbyHub : Hub
     // Helper to broadcast the current player list
     private async Task BroadcastPlayerList()
     {
-        var playerList = _players.Values.Select(p => new { p.UserName, p.Status }).ToList();
+        var playerList = _players.Values.Select(p => new { p.ConnectionId, p.UserName, p.Status }).ToList();
         await Clients.All.SendAsync("UpdatePlayerList", playerList);
     }
 
