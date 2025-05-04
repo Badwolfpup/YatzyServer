@@ -59,4 +59,10 @@ public class LobbyHub : Hub
     {
         return Task.CompletedTask; // Responds to client ping
     }
+
+    public Task RollDices(List<string> dices)
+    {
+        // Handle dice roll logic here
+        return Task.CompletedTask;
+    }
 }
