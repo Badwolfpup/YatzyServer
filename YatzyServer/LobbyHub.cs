@@ -78,7 +78,7 @@ public class LobbyHub : Hub
                 return;
             }
             _queuedplayer.Add(player);
-            
+            Clients.All.SendAsync("ReceiveMessage", player.UserName, $"{_queuedplayer.Count} in queue");
             if (_queuedplayer.Count >= 2)
             {
                 var otherplayers = _queuedplayer.Where(p => p.ConnectionId != Context.ConnectionId).ToList();
