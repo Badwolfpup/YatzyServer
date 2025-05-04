@@ -67,27 +67,45 @@ public class LobbyHub : Hub
 
     public async Task QueueForGame()
     {
-        _queuedplayer.Add(_players[Context.ConnectionId]);
-        while (_queuedplayer.Count < 2)
-        // Wait for at least 2 players to start a game
+
+        var player = _players[Context.ConnectionId];
+
+        lock (_queuedplayer)
         {
-            await Task.Delay(1000); // Check every second
+            if (_queuedplayer.Contains(player))
+            {
+                // Player is already in the queue
+                return;
+            }
+            _queuedplayer.Add(player);
+            
+            if (_queuedplayer.Count >= 2)
+            {
+                var otherplayers = _queuedplayer.Where(p => p.ConnectionId != Context.ConnectionId).ToList();
+                var matchup = new List<Player>();
+                matchup.Add(player);
+                Random random = new Random();
+                matchup.Add(otherplayers[random.Next(otherplayers.Count)]);
+                // Create a new game and assign players
+                var game = new QueuedGame(matchup[0], matchup[1]);
+                _games.Add(game);
+                _queuedplayer.Remove(matchup[0]);
+                _queuedplayer.Remove(matchup[1]);
+                StartQueuedGame(matchup);
+            }
         }
-        await StartQueuedGame(); // Start the game when 2 players are queued
-        //return Task.CompletedTask; // Add player to the queue
+
     }
 
-    private async Task StartQueuedGame()
+    private async Task StartQueuedGame(List<Player> matched)
     {
-        // Create a new game and assign players
-        var game = new QueuedGame(_queuedplayer[0], _queuedplayer[1]);
-        _games.Add(game);
+
         // Notify players about the game start
-        await Clients.Client(_queuedplayer[0].ConnectionId).SendAsync("GameStarted", _queuedplayer[0].UserName, _queuedplayer[1].UserName);
-        await Clients.Client(_queuedplayer[1].ConnectionId).SendAsync("GameStarted", _queuedplayer[0].UserName, _queuedplayer[1].UserName);
-        // Clear the queue
-        _queuedplayer.RemoveAt(0);
-        _queuedplayer.RemoveAt(1);
+        foreach (var player in matched)
+        {
+            player.Status = Status.Playing;
+            await Clients.Client(player.ConnectionId).SendAsync("GameStarted", matched[0].UserName, matched[1].UserName);
+        }
     }
 
     public async Task LeaveQueue()
