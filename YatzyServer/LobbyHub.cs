@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 using System.Collections.Concurrent;
+using System.Data.Common;
 using System.Numerics;
 using System.Threading.Tasks;
 using YatzyServer;
@@ -9,9 +10,9 @@ public class LobbyHub : Hub
     // In-memory store for players (replace with a database for persistence)
     private static readonly ConcurrentDictionary<string, Player> _players = new();
 
-    private List<Player> _queuedplayer = new();
+    private static List<Player> _queuedplayer = new();
 
-    private List<QueuedGame> _games = new();
+    private static List<QueuedGame> _games = new();
 
     // Called when a client connects
     public override async Task OnConnectedAsync()
@@ -53,6 +54,11 @@ public class LobbyHub : Hub
         }
     }
 
+    public async Task UpdateDice(int[] nums, bool[] saves)
+    {
+        await Clients.All.SendAsync("UpdateDice", nums, saves);
+    }
+
     // Helper to broadcast the current player list
     private async Task BroadcastPlayerList()
     {
@@ -86,6 +92,7 @@ public class LobbyHub : Hub
                 matchup.Add(player);
                 Random random = new Random();
                 matchup.Add(otherplayers[random.Next(otherplayers.Count)]);
+                //matchup.Add(new Player() { UserName = "AI", Status = Status.Waiting, ConnectionId = "AI" });
                 // Create a new game and assign players
                 var game = new QueuedGame(matchup[0], matchup[1]);
                 _games.Add(game);
