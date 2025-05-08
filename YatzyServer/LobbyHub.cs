@@ -54,9 +54,9 @@ public class LobbyHub : Hub
         }
     }
 
-    public async Task UpdateDice(int[] nums, bool[] saves)
+    public async Task UpdatePlayer(string json)
     {
-        await Clients.All.SendAsync("UpdateDice", nums, saves);
+        await Clients.All.SendAsync("UpdatePlayer", json);
     }
 
     // Helper to broadcast the current player list
