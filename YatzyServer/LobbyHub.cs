@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 using System.Collections.Concurrent;
+using System.ComponentModel;
 using System.Data.Common;
 using System.Numerics;
 using System.Threading.Tasks;
@@ -26,11 +27,13 @@ public class LobbyHub : Hub
         // Remove player and broadcast updated list
         if (_players.TryRemove(Context.ConnectionId, out var player))
         {
-            await Clients.All.SendAsync("PlayerLeft", player.UserName);
+            await PlayerLeft(Context.ConnectionId);
+            await Clients.All.SendAsync("PlayerDisconnected", player.UserName);
             await BroadcastPlayerList();
         }
         await base.OnDisconnectedAsync(exception);
     }
+
 
     // Client calls this to join the lobby with a username
     public async Task JoinLobby(string username)
@@ -54,9 +57,24 @@ public class LobbyHub : Hub
         }
     }
 
-    public async Task UpdatePlayer(string json)
+    public async Task UpdateDicevalue(string json)
     {
-        await Clients.All.SendAsync("UpdatePlayer", json);
+        await Clients.All.SendAsync("UpdateDiceValue", json);
+    }
+
+    public async Task UpdateDiceBorder(string json)
+    {
+        await Clients.All.SendAsync("UpdateDiceBorder", json);
+    }
+
+    public async Task UpdateTurn()
+    {
+        await Clients.All.SendAsync("UpdateTurn");
+    }
+
+    public async Task UpdatePoints(string json)
+    {
+        await Clients.All.SendAsync("UpdatePoints", json);
     }
 
     // Helper to broadcast the current player list
@@ -84,7 +102,7 @@ public class LobbyHub : Hub
                 return;
             }
             _queuedplayer.Add(player);
-            Clients.All.SendAsync("ReceiveMessage", player.UserName, $"{_queuedplayer.Count} in queue");
+            Clients.All.SendAsync("ReceiveMessage", player.UserName, $"{player.UserName} joined the randomqueue.");
             if (_queuedplayer.Count >= 2)
             {
                 var otherplayers = _queuedplayer.Where(p => p.ConnectionId != Context.ConnectionId).ToList();
@@ -113,6 +131,57 @@ public class LobbyHub : Hub
             player.Status = Status.Playing;
             await Clients.Client(player.ConnectionId).SendAsync("GameStarted", matched[0].UserName, matched[1].UserName);
         }
+         await BroadcastPlayerList();
+    }
+
+    public async Task PlayerLeft()
+    {
+        var id = Context.ConnectionId;
+        var game = _games.FirstOrDefault(g => g.Player1.ConnectionId == id || g.Player2.ConnectionId == id);
+        if (game == null || game == default) return;
+        var otherid = game.Player1.ConnectionId == id ? game.Player2.ConnectionId : game.Player1.ConnectionId;
+        _players[Context.ConnectionId].Status = Status.Waiting;
+        _players[otherid].Status = Status.Waiting;
+        _games.Remove(game);
+        await Clients.Client(otherid).SendAsync("PlayerLeft");
+        await BroadcastPlayerList();
+    }
+
+    private async Task PlayerLeft(string id)
+    {
+        var game = _games.FirstOrDefault(g => g.Player1.ConnectionId == id || g.Player2.ConnectionId == id);
+        if (game == null || game == default) return;
+        var otherid = game.Player1.ConnectionId == id ? game.Player2.ConnectionId : game.Player1.ConnectionId;
+        _players[otherid].Status = Status.Waiting;
+        _games.Remove(game);
+        await Clients.Client(otherid).SendAsync("PlayerLeft");
+        await BroadcastPlayerList();
+    }
+
+    public async Task InvitePlayer(string username)
+    {
+        var invitedPlayer = _players.Values.FirstOrDefault(p => p.UserName.Equals(username, StringComparison.OrdinalIgnoreCase));
+        if (invitedPlayer == null || invitedPlayer == default) return;
+        await Clients.Client(invitedPlayer.ConnectionId).SendAsync("InvitePlayer", Context.ConnectionId, _players[Context.ConnectionId].UserName);
+    }
+
+    public async Task AnswerToInvite(bool answer, string connectionid)
+    {
+        if (!answer)
+        {
+            await Clients.Client(connectionid).SendAsync("RejectedInvite", _players[Context.ConnectionId].UserName);
+        }
+        else
+        {
+            var player = new List<Player>()
+            {
+                _players[Context.ConnectionId],
+                _players[connectionid]
+            };
+            var game = new QueuedGame(player[0], player[1]);
+            _games.Add(game);
+            StartQueuedGame(player);
+        }
     }
 
     public async Task LeaveQueue()
@@ -120,14 +189,17 @@ public class LobbyHub : Hub
         _queuedplayer.Remove(_players[Context.ConnectionId]);
     }
 
-    //public Task StartRandomGame()
-    //{
-    //    return Task.CompletedTask;
-    //}
+   
 
-    //public Task RollDices(List<string> dices)
-    //{
-    //    // Handle dice roll logic here
-    //    return Task.CompletedTask;
-    //}
+    public async Task GameFinished()
+    {
+        _players[Context.ConnectionId].Status = Status.Waiting;
+        var game = _games.FirstOrDefault(g => g.Player1.ConnectionId == Context.ConnectionId || g.Player2.ConnectionId == Context.ConnectionId);
+        if (game == null || game == default) return;
+        var otherid = game.Player1.ConnectionId == Context.ConnectionId ? game.Player2.ConnectionId : game.Player1.ConnectionId;
+        _players[otherid].Status = Status.Waiting;
+        await Clients.Client(otherid).SendAsync("GameFinished");
+        _games.Remove(game);
+        await BroadcastPlayerList();
+    }
 }
