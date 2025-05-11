@@ -6,15 +6,15 @@ using Microsoft.Extensions.DependencyInjection;
 var builder = WebApplication.CreateBuilder(args);
 
 //// Configure Kestrel for HTTPS on port 50001
-//builder.WebHost.ConfigureKestrel(options =>
-//{
-//    options.ListenAnyIP(50001); // HTTP
-//});
-
 builder.WebHost.ConfigureKestrel(options =>
 {
-    options.ListenAnyIP(5000); // Bind to localhost only
+    options.ListenAnyIP(50001); // HTTP
 });
+
+//builder.WebHost.ConfigureKestrel(options =>
+//{
+//    options.ListenAnyIP(5000); // Bind to localhost only
+//});
 
 // Add SignalR services
 builder.Services.AddSignalR().AddJsonProtocol(options =>
