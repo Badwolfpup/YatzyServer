@@ -41,6 +41,6 @@ app.UseCors("AllowAll");
 // Map the SignalR Hub
 app.MapHub<LobbyHub>("/lobbyHub");
 
-//app.Run("http://0.0.0.0:50001");
+app.Run("http://0.0.0.0:50001");
 
-app.Run("http://0.0.0.0:5000");
+//app.Run("http://0.0.0.0:5000");
