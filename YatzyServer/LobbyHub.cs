@@ -93,6 +93,14 @@ public class LobbyHub : Hub
         //await Clients.All.SendAsync("UpdatePoints", json);
     }
 
+    public async Task AnimateDice()
+    {
+        var game = _games.FirstOrDefault(g => g.Player1.ConnectionId == Context.ConnectionId || g.Player2.ConnectionId == Context.ConnectionId);
+        if (game == null || game == default) return;
+        await Clients.Client(game.Player1.ConnectionId).SendAsync("AnimateDice");
+        await Clients.Client(game.Player2.ConnectionId).SendAsync("AnimateDice");
+    }
+
     // Helper to broadcast the current player list
     private async Task BroadcastPlayerList()
     {
