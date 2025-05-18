@@ -59,22 +59,38 @@ public class LobbyHub : Hub
 
     public async Task UpdateDicevalue(string json)
     {
-        await Clients.All.SendAsync("UpdateDiceValue", json);
+        var game = _games.FirstOrDefault(g => g.Player1.ConnectionId == Context.ConnectionId || g.Player2.ConnectionId == Context.ConnectionId);
+        if (game == null || game == default) return;
+        await Clients.Client(game.Player1.ConnectionId).SendAsync("UpdateDiceValue", json);
+        await Clients.Client(game.Player2.ConnectionId).SendAsync("UpdateDiceValue", json);
+        //await Clients.All.SendAsync("UpdateDiceValue", json);
     }
 
     public async Task UpdateDiceBorder(string json)
     {
-        await Clients.All.SendAsync("UpdateDiceBorder", json);
+        var game = _games.FirstOrDefault(g => g.Player1.ConnectionId == Context.ConnectionId || g.Player2.ConnectionId == Context.ConnectionId);
+        if (game == null || game == default) return;
+        await Clients.Client(game.Player1.ConnectionId).SendAsync("UpdateDiceBorder", json);
+        await Clients.Client(game.Player2.ConnectionId).SendAsync("UpdateDiceBorder", json);
+        //await Clients.All.SendAsync("UpdateDiceBorder", json);
     }
 
     public async Task UpdateTurn()
     {
-        await Clients.All.SendAsync("UpdateTurn");
+        var game = _games.FirstOrDefault(g => g.Player1.ConnectionId == Context.ConnectionId || g.Player2.ConnectionId == Context.ConnectionId);
+        if (game == null || game == default) return;
+        await Clients.Client(game.Player1.ConnectionId).SendAsync("UpdateTurn");
+        await Clients.Client(game.Player2.ConnectionId).SendAsync("UpdateTurn");
+        //await Clients.All.SendAsync("UpdateTurn");
     }
 
     public async Task UpdatePoints(string json)
     {
-        await Clients.All.SendAsync("UpdatePoints", json);
+        var game = _games.FirstOrDefault(g => g.Player1.ConnectionId == Context.ConnectionId || g.Player2.ConnectionId == Context.ConnectionId);
+        if (game == null || game == default) return;
+        await Clients.Client(game.Player1.ConnectionId).SendAsync("UpdatePoints", json);
+        await Clients.Client(game.Player2.ConnectionId).SendAsync("UpdatePoints", json);
+        //await Clients.All.SendAsync("UpdatePoints", json);
     }
 
     // Helper to broadcast the current player list
