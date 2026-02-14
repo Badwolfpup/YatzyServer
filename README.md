@@ -17,10 +17,10 @@ The SignalR backend server for the [Yatzy](https://github.com/Badwolfpup/Yatzy) 
 
 ```
 YatzyServer/
-├── Program.cs          # Server configuration and startup
-├── LobbyHub.cs         # SignalR hub for game communication
-├── Player.cs           # Player model
-└── QueuedGame.cs       # Matchmaking queue model
++-- Program.cs          # Server configuration and startup
++-- LobbyHub.cs         # SignalR hub for game communication
++-- Player.cs           # Player model
++-- QueuedGame.cs       # Matchmaking queue model
 ```
 
 ## How to Run
